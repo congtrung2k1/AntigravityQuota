@@ -7,9 +7,16 @@ import {quota_snapshot, model_quota_info} from '../utils/types';
 
 /** Mapping of model labels to short abbreviations for status bar display */
 const MODEL_ABBREVIATIONS: Record<string, string> = {
-	'Gemini 3 Pro (High)': 'Gemini 3 Pro (H)',
-	'Gemini 3 Pro (Low)': 'Gemini 3PL',
+	'Gemini 3.5 Flash (Low)': 'Gemini 3.5F(L)',
+	'Gemini 3.5 Flash (Medium)': 'Gemini 3.5F(M)',
+	'Gemini 3.5 Flash (High)': 'Gemini 3.5F(H)',
+	'Gemini 3.1 Pro (High)': 'Gemini 3.1P(H)',
+	'Gemini 3.1 Pro (Low)': 'Gemini 3.1P(L)',
+	'Gemini 3 Pro (High)': 'Gemini 3P(H)',
+	'Gemini 3 Pro (Low)': 'Gemini 3P(L)',
 	'Gemini 3 Flash': 'Gemini 3F',
+	'Claude Sonnet 4.6 (Thinking)': 'Claude S4.6T',
+	'Claude Opus 4.6 (Thinking)': 'Claude O4.6T',
 	'Claude Sonnet 4.5': 'Claude S4.5',
 	'Claude Sonnet 4.5 (Thinking)': 'Claude S4.5T',
 	'Claude Opus 4.5 (Thinking)': 'Claude O4.5T',
