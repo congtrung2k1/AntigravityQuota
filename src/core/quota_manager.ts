@@ -2,8 +2,8 @@
  * Quota Manager Service
  */
 
-import * as https from 'https';
-import {quota_snapshot, model_quota_info, prompt_credits_info, server_user_status_response} from '../utils/types';
+import * as http from 'http';
+import {quota_snapshot, model_quota_info, prompt_credits_info, server_user_status_response, RetrieveUserQuotaSummaryResponse} from '../utils/types';
 import {logger} from '../utils/logger';
 
 export const RECONNECT_REQUIRED = 'RECONNECT_REQUIRED';
@@ -29,7 +29,7 @@ export class QuotaManager {
 	private request<T>(path: string, body: object): Promise<T> {
 		return new Promise((resolve, reject) => {
 			const data = JSON.stringify(body);
-			const options: https.RequestOptions = {
+			const options: http.RequestOptions = {
 				hostname: '127.0.0.1',
 				port: this.port,
 				path,
@@ -40,11 +40,10 @@ export class QuotaManager {
 					'Connect-Protocol-Version': '1',
 					'X-Codeium-Csrf-Token': this.csrf_token,
 				},
-				rejectUnauthorized: false,
 				timeout: 5000,
 			};
 
-			const req = https.request(options, res => {
+			const req = http.request(options, res => {
 				let body = '';
 				res.on('data', chunk => (body += chunk));
 				res.on('end', () => {
@@ -90,15 +89,16 @@ export class QuotaManager {
 
 	async fetch_quota() {
 		try {
-			const data = await this.request<server_user_status_response>('/exa.language_server_pb.LanguageServerService/GetUserStatus', {
-				metadata: {
-					ideName: 'antigravity',
-					extensionName: 'antigravity',
-					locale: 'en',
-				},
-			});
+			const data = await this.request<RetrieveUserQuotaSummaryResponse>(
+				'/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary',
+				{}
+			);
 
-			const snapshot = this.parse_response(data);
+			const snapshot: quota_snapshot = {
+				timestamp: new Date(),
+				groups: data.response?.groups || [],
+				models: [],
+			};
 			this.consecutive_errors = 0;
 
 			if (this.update_callback) {
@@ -120,6 +120,19 @@ export class QuotaManager {
 			} else if (this.error_callback) {
 				this.error_callback(error);
 			}
+		}
+	}
+
+	async fetch_quota_summary(): Promise<RetrieveUserQuotaSummaryResponse> {
+		try {
+			const data = await this.request<RetrieveUserQuotaSummaryResponse>(
+				'/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary',
+				{}
+			);
+			return data;
+		} catch (error: any) {
+			logger.error('QuotaManager', `Fetch quota summary failed: ${error.message}`);
+			throw error;
 		}
 	}
 

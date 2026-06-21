@@ -4,7 +4,7 @@
 
 import {exec} from 'child_process';
 import {promisify} from 'util';
-import * as https from 'https';
+import * as http from 'http';
 import {WindowsStrategy, UnixStrategy, platform_strategy} from './platform_strategies';
 import * as process from 'process';
 import * as vscode from 'vscode';
@@ -29,13 +29,13 @@ export class ProcessFinder {
 
 		if (process.platform === 'win32') {
 			this.strategy = new WindowsStrategy();
-			this.process_name = `language_server_windows_${process.arch === 'arm64' ? 'arm' : 'x64'}.exe`;
+			this.process_name = 'language_server.exe';
 		} else if (process.platform === 'darwin') {
 			this.strategy = new UnixStrategy('darwin');
-			this.process_name = `language_server_macos${process.arch === 'arm64' ? '_arm' : ''}`;
+			this.process_name = 'language_server';
 		} else {
 			this.strategy = new UnixStrategy('linux');
-			this.process_name = `language_server_linux${process.arch === 'arm64' ? '_arm' : '_x64'}`;
+			this.process_name = 'language_server';
 		}
 
 		logger.info(LOG_CAT, `Target process name: ${this.process_name}`);
@@ -176,9 +176,9 @@ export class ProcessFinder {
 				timeout: 5000,
 			};
 
-			logger.debug(LOG_CAT, `HTTP request to https://127.0.0.1:${port}${options.path}`);
+			logger.debug(LOG_CAT, `HTTP request to http://127.0.0.1:${port}${options.path}`);
 
-			const req = https.request(options, res => {
+			const req = http.request(options, res => {
 				logger.debug(LOG_CAT, `Response from port ${port}: status=${res.statusCode}`);
 
 				let body = '';

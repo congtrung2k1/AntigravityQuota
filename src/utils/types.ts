@@ -38,6 +38,7 @@ export interface quota_snapshot {
 	timestamp: Date;
 	prompt_credits?: prompt_credits_info;
 	models: model_quota_info[];
+	groups?: QuotaGroup[];
 }
 
 export enum quota_level {
@@ -76,3 +77,27 @@ export interface server_user_status_response {
 		};
 	};
 }
+
+export interface QuotaBucket {
+	bucketId: string;
+	displayName: string;
+	description: string;
+	window: string;
+	remainingFraction: number;
+	resetTime: string;
+	disabled?: boolean;
+}
+
+export interface QuotaGroup {
+	displayName: string;
+	description: string;
+	buckets: QuotaBucket[];
+}
+
+export interface RetrieveUserQuotaSummaryResponse {
+	response: {
+		groups: QuotaGroup[];
+		description: string;
+	};
+}
+
