@@ -1,4 +1,4 @@
-import * as Module from 'module';
+import Module = require('module');
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -77,7 +77,7 @@ async function run() {
 	let token = '';
 
 	const finder = new ProcessFinder();
-	const processInfo = await finder.detect_process_info();
+	const processInfo = await finder.detect_process_info(1);
 
 	if (processInfo) {
 		port = processInfo.connect_port;

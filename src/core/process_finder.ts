@@ -29,7 +29,7 @@ export class ProcessFinder {
 
 		if (process.platform === 'win32') {
 			this.strategy = new WindowsStrategy();
-			this.process_name = 'language_server.exe';
+			this.process_name = 'language_server';
 		} else if (process.platform === 'darwin') {
 			this.strategy = new UnixStrategy('darwin');
 			this.process_name = 'language_server';
@@ -41,7 +41,7 @@ export class ProcessFinder {
 		logger.info(LOG_CAT, `Target process name: ${this.process_name}`);
 	}
 
-	async detect_process_info(max_retries: number = 1): Promise<process_info | null> {
+	async detect_process_info(max_retries: number = 15): Promise<process_info | null> {
 		logger.section(LOG_CAT, `Starting process detection (max_retries: ${max_retries})`);
 		const timer = logger.time_start('detect_process_info');
 
@@ -60,40 +60,41 @@ export class ProcessFinder {
 
 				logger.debug(LOG_CAT, `Raw stdout (${stdout.length} chars):\n${stdout}`);
 
-				const info = this.strategy.parse_process_info(stdout);
+				const candidates = this.strategy.parse_process_info(stdout);
 
-				if (info) {
-					logger.info(LOG_CAT, `Process info parsed successfully:`, {
-						pid: info.pid,
-						extension_port: info.extension_port,
-						csrf_token: `${info.csrf_token.substring(0, 8)}...`,
-					});
+				if (candidates.length > 0) {
+					logger.info(LOG_CAT, `Found ${candidates.length} candidates, testing them...`);
 
-					logger.debug(LOG_CAT, `Getting listening ports for PID: ${info.pid}`);
-					const ports = await this.get_listening_ports(info.pid);
+					for (let j = 0; j < candidates.length; j++) {
+						const info = candidates[j];
+						logger.info(LOG_CAT, `Testing candidate ${j + 1}/${candidates.length} (PID: ${info.pid}, extension_port: ${info.extension_port})`);
 
-					logger.debug(LOG_CAT, `Found ${ports.length} listening port(s): [${ports.join(', ')}]`);
+						logger.debug(LOG_CAT, `Getting listening ports for PID: ${info.pid}`);
+						const ports = await this.get_listening_ports(info.pid);
 
-					if (ports.length > 0) {
-						logger.debug(LOG_CAT, `Testing ports to find working endpoint...`);
-						const valid_port = await this.find_working_port(ports, info.csrf_token);
+						logger.debug(LOG_CAT, `Found ${ports.length} listening port(s): [${ports.join(', ')}]`);
 
-						if (valid_port) {
-							logger.info(LOG_CAT, `SUCCESS: Valid port found: ${valid_port}`);
-							timer();
-							return {
-								extension_port: info.extension_port,
-								connect_port: valid_port,
-								csrf_token: info.csrf_token,
-							};
+						if (ports.length > 0) {
+							logger.debug(LOG_CAT, `Testing ports to find working endpoint...`);
+							const valid_port = await this.find_working_port(ports, info.csrf_token);
+
+							if (valid_port) {
+								logger.info(LOG_CAT, `SUCCESS: Valid port found: ${valid_port} for PID ${info.pid}`);
+								timer();
+								return {
+									extension_port: info.extension_port,
+									connect_port: valid_port,
+									csrf_token: info.csrf_token,
+								};
+							} else {
+								logger.warn(LOG_CAT, `No ports responded successfully to health check for PID ${info.pid}`);
+							}
 						} else {
-							logger.warn(LOG_CAT, `No ports responded successfully to health check`);
+							logger.warn(LOG_CAT, `No listening ports found for PID ${info.pid}`);
 						}
-					} else {
-						logger.warn(LOG_CAT, `No listening ports found for PID ${info.pid}`);
 					}
 				} else {
-					logger.warn(LOG_CAT, `Failed to parse process info from command output`);
+					logger.warn(LOG_CAT, `Failed to find any process candidates from command output`);
 				}
 			} catch (e: any) {
 				logger.error(LOG_CAT, `Attempt ${i + 1} failed with error:`, {
@@ -109,8 +110,8 @@ export class ProcessFinder {
 			}
 
 			if (i < max_retries - 1) {
-				logger.debug(LOG_CAT, `Waiting 100ms before retry...`);
-				await new Promise(r => setTimeout(r, 100));
+				logger.debug(LOG_CAT, `Waiting 1000ms before retry...`);
+				await new Promise(r => setTimeout(r, 1000));
 			}
 		}
 
@@ -165,7 +166,7 @@ export class ProcessFinder {
 			const options = {
 				hostname: '127.0.0.1',
 				port,
-				path: '/exa.language_server_pb.LanguageServerService/GetUnleashData',
+				path: '/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary',
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
