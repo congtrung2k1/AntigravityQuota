@@ -1,9 +1,9 @@
 {
-	"name": "antigravity-quota",
-	"displayName": "Antigravity Quota (AGQ)",
+	"name": "agy-quota",
+	"displayName": "Agy Quota (AGQ)",
 	"description": "VS Code extension for the Antigravity IDE to monitor the usage of the models",
-	"version": "1.2.0",
-	"publisher": "antigravity",
+	"version": "0.0.1",
+	"publisher": "trungtc",
 	"icon": "assets/AntiGravityQuota.png",
 	"engines": {
 		"vscode": "^1.90.0"
